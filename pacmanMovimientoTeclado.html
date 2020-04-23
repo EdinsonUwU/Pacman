@@ -7,8 +7,8 @@
 
   // Importamos las librerias
   let { append, cons, first, isEmpty, isList, length, rest, map } = require("fl-extended");
-var x = null
-var y = null
+  var x = null
+  var y = null
 
   function make(data, attribute) {
     return Object.assign({}, data, attribute);
@@ -27,7 +27,7 @@ var y = null
       processing.frameRate(6);
       processing.size(400, 400);
       processing.background(15, 200, 50);
-      processing.state = {time: 0 ,pacman: {x: 50, y: 70}};
+      processing.state = { time: 0, pacman: { x: 50, y: 70 } };
     }
 
 
@@ -35,10 +35,10 @@ var y = null
     processing.drawGame = function (world) {
       processing.background()// hace que no se muestre todos los lugares por donde ha estado pacman
       processing.fill(240, 240, 0);
-      if (world.time%2==0){
-        processing.arc(world.pacman.x, world.pacman.y, 50 , 50, 0, Math.PI * 2)
-      }else {
-        processing.arc(world.pacman.x, world.pacman.y, 50 , 50, Math.PI/4,Math.PI*1.7)
+      if (world.time % 2 == 0) {
+        processing.arc(world.pacman.x, world.pacman.y, 50, 50, 0, Math.PI * 2)
+      } else {
+        processing.arc(world.pacman.x, world.pacman.y, 50, 50, Math.PI / 4, Math.PI * 1.7)
       }
       console.log(world.time)
     }
@@ -55,9 +55,9 @@ var y = null
     * Actualiza el mundo en cada tic del reloj. Retorna el nuevo stado del mundo
     */
     processing.onTic = function (world) {
-      return make(world, {time : world.time +1}, {pacman: { x: world.pacman.x, y: world.pacman.y}});
+      return make(world, { time: world.time + 1 }, { pacman: { x: world.pacman.x, y: world.pacman.y } });
     }
-// time: world.time + 1, 
+    // time: world.time + 1, 
     /**
     * Actualiza el mundo cada vez que se oprime una tecla. Retorna el nuevo stado del mundo
     */
@@ -65,16 +65,16 @@ var y = null
       console.log(keyCode);
       switch (keyCode) {
         case processing.UP:
-          return make(world, { pacman: {x: world.pacman.x, y: world.pacman.y - 5}});
+          return make(world, { pacman: { x: world.pacman.x, y: world.pacman.y - 5 } });
           break;
         case processing.DOWN:
-          return make(world, { pacman: {x: world.pacman.x, y: world.pacman.y + 5}});
+          return make(world, { pacman: { x: world.pacman.x, y: world.pacman.y + 5 } });
           break;
         case processing.LEFT:
-          return make(world, { pacman: {x: world.pacman.x - 5, y: world.pacman.y}});
+          return make(world, { pacman: { x: world.pacman.x - 5, y: world.pacman.y } });
           break;
         case processing.RIGHT:
-          return make(world, { pacman: {x: world.pacman.x + 5, y: world.pacman.y}});
+          return make(world, { pacman: { x: world.pacman.x + 5, y: world.pacman.y } });
           break;
         default:
           console.log(keyCode);
@@ -124,4 +124,112 @@ var y = null
 
   // Adjuntamos nuestro sketch al framework de processing
   var processingInstance = new Processing(canvas, sketchProc);
+
+  // Juego
+  const pacmanStep = 1;
+
+  /*
+  pacman = {
+    x:null,
+    y:null,
+    currentMovement:null,
+    nextMove:null
+  }
+  */
+
+  /*
+  mapa = {
+    size:null,
+    matrix:null,
+    pared:null,
+    camino:null
+  }
+  */
+
+  function moverPacman(pacman, mapa) {
+    // verificar que haya movimiento
+    if (pacman.currentMovement || pacman.nextMove) {
+      // verificar que la posicion sea correcta
+      // -> quizas no sea una operacion necesaria
+
+      // verificar que el siguiente movimiento sea un movimiento valido
+      // si lo es -> cambia currentMovement por nextMove
+      // y nextMove -> null
+      if (pacman.nextMove) {
+        // EL X Y EL Y TIENEN QUE ESTAR CON REFERENCIA AL [0][0] DE LA MATRIZ
+
+        // calcular la posicion actual de pacman respecto a la matriz, en formato, fila, columna
+        let col = Math.ceil((pacman.x / mapa.size)) - 1;
+        let row = Math.ceil((pacman.y / mapa.size)) - 1;
+
+        // determinar la siguiente celda de movimiento, en funcion de la peticion de movimiento (nextMove)
+        if (pacman.nextMove = processing.UP) let posicion = { col: col, row: row - 1 };
+        if (pacman.nextMove = processing.DOWN) let posicion = { col: col, row: row + 1 };
+        if (pacman.nextMove = processing.LEFT) let posicion = { col: col - 1, row: row };
+        if (pacman.nextMove = processing.RIGHT) let posicion = { col: col + 1, row: row };
+
+        // revisar si hay camino
+        // y cambiar direccion de movimiento
+        if (determinarCelda(mapa, posicion, mapa.camino)) {
+          return moverPacman({ x: pacman.x, y: pacman.y, currentMovement: pacman.nextMove, nextMove: null }, mapa);
+        } else if (!pacman.currentMovement) {
+          // si no se está movimiendo, y no puede moverse -> deje de verificar
+          return { x: pacman.x, y: pacman.y, currentMovement: null, nextMove: null };
+        }
+        // si no hay camino, simplemente sigue su movimiento actual
+      }
+
+      // verificar que en el movimiento actual no haya ninguna pared
+      // si la hay -> cambia currentMovement por null
+      if (pacman.currentMovement) {
+        // EL X Y EL Y TIENEN QUE ESTAR CON REFERENCIA AL [0][0] DE LA MATRIZ
+
+        // calcular la posicion actual de pacman respecto a la matriz, en formato, fila, columna
+        let col = Math.ceil((pacman.x / mapa.size)) - 1;
+        let row = Math.ceil((pacman.y / mapa.size)) - 1;
+
+        // determinar la siguiente celda de movimiento, en funcion del movimiento actual
+        if (pacman.currentMovement = processing.UP) let posicion = { col: col, row: row - 1 };
+        if (pacman.currentMovement = processing.DOWN) let posicion = { col: col, row: row + 1 };
+        if (pacman.currentMovement = processing.LEFT) let posicion = { col: col - 1, row: row };
+        if (pacman.currentMovement = processing.RIGHT) let posicion = { col: col + 1, row: row };
+
+        // revisar si hay una pared
+        if (determinarCelda(mapa, posicion, mapa.pared)) {
+          return { x: pacman.x, y: pacman.y, currentMovement: null, nextMove: pacman.nextMove };
+        }
+      }
+
+      // hacer el movimiento actual
+      switch (pacman.currentMovement) {
+        case processing.UP:
+          return { x: pacman.x, y: pacman.y - pacmanStep, currentMovement: pacman.currentMovement, nextMove: pacman.nextMove };
+          break;
+        case processing.DOWN:
+          return { x: pacman.x, y: pacman.y + pacmanStep, currentMovement: pacman.currentMovement, nextMove: pacman.nextMove };
+          break;
+        case processing.LEFT:
+          return { x: pacman.x - pacmanStep, y: pacman.y, currentMovement: pacman.currentMovement, nextMove: pacman.nextMove };
+          break;
+        case processing.RIGHT:
+          return { x: pacman.x + pacmanStep, y: pacman.y, currentMovement: pacman.currentMovement, nextMove: pacman.nextMove };
+          break;
+      }
+    }
+    return pacman;
+  }
+
+  /*
+  posicion = {
+    col:null,
+    row:null
+  }
+  */
+  function determinarCelda(mapa, posicion, bloque) {
+    if (mapa.matrix[posicion.col][posicion.row] == bloque) { // quizas primero sea row y luego col
+      return true;
+    } else {
+      return false;
+    }
+  }
 </script>
