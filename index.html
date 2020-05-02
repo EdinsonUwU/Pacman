@@ -4,6 +4,7 @@
     <title>Pacman</title>
     <script src="js/jquery-3.1.1.min.js"></script>
     <script src="js/processing.js"></script>
+    <script src="js/fl-extended.js"></script>
 </head>
 
 <div id="pagina">
@@ -23,30 +24,33 @@
         border-width: 5px;
         border-style: solid;
         border-color: black;
-        border-radius: 10px;
+        border-radius: 0px;
     }
 
     body {
-        background: #B22626;
+        background: rgb(19, 188, 240);
     }
 </style>
 
 
 <script>
-    //Vamos a usar http://processingjs.org/
-    // o https://p5js.org/reference/
+    let { append, cons, first, isEmpty, isList, length, rest, map } = require('fl-extended');
 
-    /**
-    * Ejemplo de interacción de la aplicación con el teclado. Se reacciona a las teclas de las flechas. 
-    * Las teclas modifican la posición del rectángulo 
-    */
     function sketchProc(processing) {
         // esto se llama antes de iniciar el juego
         processing.setup = function () {
-            processing.frameRate(48);
+            processing.frameRate(framesPerSecond);
             processing.size(mapa.size.width, mapa.size.height);
-            processing.background(178, 38, 38);
-            processing.state = { time: 1, pacman: { x: 150, y: 150, currentMovement: processing.RIGHT } };
+            processing.background(250, 250, 250);
+            processing.state = { time: 1, pacman: { x: 0, y: 0, currentMovement: processing.LEFT } };
+            // enfocar el canvas al inicio 
+            document.getElementById("canvas").focus();
+        }
+
+        // Se ejecuta 48 veces por segundo. 
+        processing.draw = function () {
+            processing.state = processing.onTic(processing.state);
+            processing.drawGame(processing.state);
         }
 
         // dibuja algo en el canvas. Aqui se pone todo lo que quieras pintar
@@ -54,23 +58,23 @@
             // hace que no se muestre todos los lugares por donde ha estado pacman
             processing.background();
             dibujarMapa(world);
-            //dibujarPacmanAnimado(world);
+            dibujarPacmanAnimado(world);
+
 
         }
 
-        // Esta es la función que pinta todo. Se ejecuta 60 veces por segundo. 
-        // No cambie esta función. Su código debe ir en drawGame
-        processing.draw = function () {
-            processing.drawGame(processing.state);
-            processing.state = processing.onTic(processing.state);
-        };
-
-        // actualiza el mundo en cada tic del reloj. Retorna el nuevo stado del mundo
+        // actualiza el mundo en cada tic del reloj. Retorna el nuevo estado del mundo
         processing.onTic = function (world) {
-            return Object.assign(world, { time: world.time + 1 }, { pacman: moverPacman(world.pacman, world.time) });
+            if (world.time == 1)
+                return Object.assign(world, { time: world.time + 1 }, { pacman: inicializarPacman(world) });
+
+            let pacman = moverPacman(world.pacman, world.time);
+            //let pacman = world.pacman;
+
+            return Object.assign(world, { time: world.time + 1 }, { pacman: pacman });
         }
 
-        // actualiza el mundo cada vez que se oprime una tecla. Retorna el nuevo stado del mundo
+        // actualiza el mundo cada vez que se oprime una tecla. Retorna el nuevo estado del mundo
         processing.onKeyEvent = function (world, keyCode) {
             switch (keyCode) {
                 case processing.UP:
@@ -107,47 +111,79 @@
 
             // dibuja el pacman en el mapa, se incluye la rotacion de acuerdo a la direccion de movimiento
             let pacman = world.pacman;
-            if (pacman.currentMovement == processing.UP) {
-                if ((world.time / 8) % 2 < 1) {
-                    processing.arc(pacman.x, pacman.y, 50, 50, 0, Math.PI * 2)
-                } else {
-                    processing.arc(pacman.x, pacman.y, 50, 50, -Math.PI / 4.4, Math.PI * 1.2)
-                }
-            }
-            if (pacman.currentMovement == processing.DOWN) {
-                if ((world.time / 8) % 2 < 1) {
-                    processing.arc(pacman.x, pacman.y, 50, 50, 0, Math.PI * 2)
-                } else {
-                    processing.arc(pacman.x, pacman.y, 50, 50, -Math.PI * 1.2, Math.PI / 5)
-                }
-            }
-            if (pacman.currentMovement == processing.LEFT) {
-                if ((world.time / 8) % 2 < 1) {
-                    processing.arc(pacman.x, pacman.y, 50, 50, 0, Math.PI * 2)
-                } else {
-                    processing.arc(pacman.x, pacman.y, 50, 50, -Math.PI / 1.4, Math.PI * 0.75)
-                }
-            }
-            if (pacman.currentMovement == processing.RIGHT) {
-                if ((world.time / 8) % 2 < 1) {
-                    processing.arc(pacman.x, pacman.y, 50, 50, 0, Math.PI * 2);
-                } else {
-                    processing.arc(pacman.x, pacman.y, 50, 50, Math.PI / 4, Math.PI * 1.7);
-                }
-            }
+            // queremos que quepa en el camino, asi que elejimos la menor anchura para que no sobrepase el camino = 0;
+            const pacmanSize = Math.min(cellSizeWidth, cellSizeHeight);
+
+            processing.fill(250, 200, 0); // color
+
+            processing.translate(pacman.x, pacman.y); // mueve el centro de rotacion
+
+
+            if (pacman.currentMovement == processing.UP)
+                processing.rotate(radianes(270));
+
+            if (pacman.currentMovement == processing.DOWN)
+                processing.rotate(radianes(90));
+
+            if (pacman.currentMovement == processing.LEFT)
+                processing.rotate(radianes(180));
+
+            if (pacman.currentMovement == processing.RIGHT)
+                processing.rotate(radianes(0));
+
+
+            processing.noStroke(); // no dibujar lineas de contorno
+
+            if (animacion(world.time, 3, 6) < 1)
+                dibujarPacmanCompleto(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 2)
+                dibujarPacmanConArco2(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 3)
+                dibujarPacmanConArco3(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 4)
+                dibujarPacmanConArco(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 5)
+                dibujarPacmanConArco3(pacmanSize);
+            else
+                dibujarPacmanConArco2(pacmanSize);
+
+            processing.stroke(0); // volver a dibujar las lineas de contorno, color negro
 
         }
-        function dibujarMapa(world) {
-            let cellSizeWidth = cellSize(mapa.size.width, mapa.matrix[0].length);
-            let cellSizeHeight = cellSize(mapa.size.height, mapa.matrix.length);
 
+        function animacion(time, velocidadSprite, numeroDeSprites) {
+            return (time / (framesPerSecond / (velocidadSprite * numeroDeSprites))) % numeroDeSprites;
+        }
+
+        function dibujarPacmanCompleto(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, 0, radianes(360));
+        }
+
+        function dibujarPacmanConArco(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(45), radianes(315));
+        }
+
+        function dibujarPacmanConArco2(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(15), radianes(345));
+        }
+
+        function dibujarPacmanConArco3(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(30), radianes(330));
+        }
+
+        //radianes(angulo) toma como parametro una angulo (45) y da como salida un radian (PI/4)
+        function radianes(angulo) {
+            return angulo * (Math.PI / 180);
+        }
+
+        function dibujarMapa() {
             forEach(mapa.matrix, (row, i) => {
                 forEach(row, (cell, j) => {
                     if (cell == mapa.pared) {
                         processing.fill(10, 30, 220); // color
                         processing.rect(j * cellSizeWidth, i * cellSizeHeight, cellSizeWidth, cellSizeHeight);
                     }
-                    if (cell == mapa.camino) {
+                    if (cell == mapa.camino || cell == mapa.pacman) {
                         processing.fill(20, 35, 80); // color
                         processing.rect(j * cellSizeWidth, i * cellSizeHeight, cellSizeWidth, cellSizeHeight);
                     }
@@ -155,9 +191,30 @@
             });
         }
 
-        function cellSize(canvasSize, matrixSize) {
-            return canvasSize / matrixSize;
+        function inicializarPacman(world) {
+
+            return mapa.matrix.reduce(function (acumulador, row, i) {
+                let j = row.findIndex((cell) => cell == mapa.pacman);
+                if (j != -1) {
+                    return { x: j * cellSizeWidth, y: i * cellSizeHeight, currentMovement: world.pacman.currentMovement };
+                } else {
+                    return acumulador;
+                }
+            });
+
+            /* forEach(mapa.matrix, (row, i) => {
+                 forEach(row, (cell, j) => {
+                     if (cell == mapa.pacman) {
+                         console.log(i);
+                         console.log(j);
+ 
+                         return { x: i * cellSizeWidth, y: j * cellSizeHeight, currentMovement: world.pacman.currentMovement };
+                     }
+                 })
+             });*/
         }
+
+        const framesPerSecond = 48;
         /*
             mapa = {
                 size:null,
@@ -184,16 +241,25 @@
                 [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
                 [1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1],
                 [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 'p', 1, 1, 0, 1],
                 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
             ],
             pared: 1,
-            camino: 0
+            camino: 0,
+            pacman: 'p',
         };
 
+        function cellSize(canvasSize, matrixSize) {
+            return canvasSize / matrixSize;
+        }
+        // mapa.matrix.length = 15
+        //mapa.matrix[0].length=27
+        const cellSizeWidth = cellSize(mapa.size.width, mapa.matrix[0].length);
+        const cellSizeHeight = cellSize(mapa.size.height, mapa.matrix.length);
+        // mapa.matrix.length = 15
         // cambia la longitud de los pasos de pacman
-        const pacmanStep = 1;
+        const pacmanStep = 2;
 
         // cambia la posicion del pacman
         // proccessing.up sirve es la direccion
@@ -210,18 +276,33 @@
         function moverPacman(pacman, gameTime) {
 
             // si pacman llego a la frontera, que se detenga
+            /*
             if (pacman.x > mapa.size.width) {
-
+ 
             }
             if (pacman.x < 0) {
-
+ 
             }
             if (pacman.y > mapa.size.height) {
-
+ 
             }
-            if (pacman.y <= 30 && pacman.currentMovement == processing.UP) {
+            */
+            if (pacman.y <= cellSizeHeight + cellSizeWidth / 2 + 3 && pacman.currentMovement == processing.UP) {
+
+                return { x: pacman.x, y: pacman.y, currentMovement: processing.LEFT };
+            }
+            if (pacman.currentMovement == processing.LEFT && pacman.x <= cellSizeWidth + cellSizeWidth / 2 + 1) {
+
                 return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
             }
+            if (pacman.currentMovement == processing.DOWN && pacman.y >= mapa.size.height - (cellSizeHeight + cellSizeWidth / 2 + 1)) {
+
+                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
+            }
+
+            if (pacman.currentMovement == processing.RIGHT && pacman.x >= mapa.size.width - (cellSizeWidth + cellSizeWidth / 2))
+                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
+
 
             // mover el pacman un step
             if (pacman.currentMovement == processing.UP)
@@ -231,6 +312,7 @@
                 return { x: pacman.x - pacmanStep, y: pacman.y, currentMovement: pacman.currentMovement };
 
             if (pacman.currentMovement == processing.DOWN)
+                //
                 return { x: pacman.x, y: pacman.y + pacmanStep, currentMovement: pacman.currentMovement };
 
             if (pacman.currentMovement == processing.RIGHT)
@@ -249,28 +331,12 @@
             }
         }
 
-        function isEmpty(list) {
-            if (typeof list == 'object') {
-                return list.length === 0;
-            }
-            return false;
-        }
-
-        function first(list) {
-            return list.slice(0, 1)[0];
-        }
-
-        function rest(list) {
-            return list.slice(1);
-        }
-
-
         // ----------------------------------------------------------------------------------------------------------------
     }
 
     var canvas = document.getElementById("canvas");
-
+    // ----------------------------------------------------------------------------------------------------------------
+    var canvas = document.getElementById("canvas");
     // Adjuntamos nuestro sketch al framework de processing
     var processingInstance = new Processing(canvas, sketchProc);
-
 </script>
