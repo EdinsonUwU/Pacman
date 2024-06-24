@@ -1,0 +1,422 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacman</title>
+    <script src="js/jquery-3.1.1.min.js"></script>
+    <script src="js/processing.js"></script>
+    <script src="js/fl-extended.js"></script>
+</head>
+
+<div id="pagina">
+    <canvas id="canvas"></canvas>
+</div>
+
+<style>
+    #pagina {
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        height: 100%;
+        align-items: center;
+    }
+
+    #canvas {
+        border-width: 5px;
+        border-style: solid;
+        border-color: black;
+        border-radius: 0px;
+    }
+
+    body {
+        background: rgb(19, 188, 240);
+    }
+</style>
+
+
+<script>
+    let { append, cons, first, isEmpty, isList, length, rest, map } = require('fl-extended');
+
+    function sketchProc(processing) {
+        // esto se llama antes de iniciar el juego
+        processing.setup = function () {
+            processing.frameRate(framesPerSecond);
+            processing.size(mapa.size.width, mapa.size.height);
+            processing.background(250, 250, 250);
+            processing.state = { time: 1, pacman: { x: 0, y: 0, currentMovement: processing.RIGHT } };
+            // enfocar el canvas al inicio 
+            document.getElementById("canvas").focus();
+        }
+
+        // Se ejecuta 48 veces por segundo. 
+        processing.draw = function () {
+            processing.state = processing.onTic(processing.state);
+            processing.drawGame(processing.state);
+        }
+
+        // dibuja algo en el canvas. Aqui se pone todo lo que quieras pintar
+        processing.drawGame = function (world) {
+            // hace que no se muestre todos los lugares por donde ha estado pacman
+            processing.background();
+            dibujarMapa(world);
+            dibujarPacmanAnimado(world);
+
+
+        }
+
+        // actualiza el mundo en cada tic del reloj. Retorna el nuevo estado del mundo
+        processing.onTic = function (world) {
+            // console.log(indicePared(world))
+            console.log(pacmanMatrix(world))
+            if (world.time == 1)
+                return Object.assign(world, { time: world.time + 1 }, { pacman: inicializarPacman(world) });
+
+            //let pacman = moverPacman(world.pacman, world.time);
+            let nextCell = identificar(world);
+            //let pacman = world.pacman;
+            return Object.assign(world, { time: world.time + 1 }, { pacman: nextCell });
+        }
+
+        // actualiza el mundo cada vez que se oprime una tecla. Retorna el nuevo estado del mundo
+        processing.onKeyEvent = function (world, keyCode) {
+            switch (keyCode) {
+                case processing.UP:
+                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.UP } });
+                    //x: world.pacman.x, y: world.pacman.y -5, 
+                    break;
+                case processing.DOWN:
+                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.DOWN } });
+                    //x: world.pacman.x, y: world.pacman.y +5 , 
+                    break;
+                case processing.LEFT:
+                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.LEFT } });
+                    //x: world.pacman.x -5, y: world.pacman.y,
+                    break;
+                case processing.RIGHT:
+                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.RIGHT } });
+                    //x: world.pacman.x +5, y: world.pacman.y, 
+                    break;
+                default:
+                    console.log(keyCode);
+                    return Object.assign(world, {});
+            }
+        }
+
+        // Esta función se ejecuta cada vez que presionamos una tecla.
+        processing.keyPressed = function () {
+            processing.state = processing.onKeyEvent(processing.state, processing.keyCode);
+        }
+
+        // ----------------------------------------------------------------------------------------------------------------
+        // NUESTROS CODIGOS
+        // ----------------------------------------------------------------------------------------------------------------
+        function dibujarPacmanAnimado(world) {
+
+            // dibuja el pacman en el mapa, se incluye la rotacion de acuerdo a la direccion de movimiento
+            let pacman = world.pacman;
+            // queremos que quepa en el camino, asi que elejimos la menor anchura para que no sobrepase el camino = 0;
+            const pacmanSize = Math.min(cellSizeWidth, cellSizeHeight);
+
+            processing.fill(250, 200, 0); // color #FAC800
+
+            processing.translate(pacman.x, pacman.y); // mueve el centro de rotacion
+
+
+            if (pacman.currentMovement == processing.UP)
+                processing.rotate(radianes(270));
+
+            if (pacman.currentMovement == processing.DOWN)
+                processing.rotate(radianes(90));
+
+            if (pacman.currentMovement == processing.LEFT)
+                processing.rotate(radianes(180));
+
+            if (pacman.currentMovement == processing.RIGHT)
+                processing.rotate(radianes(0));
+
+
+            processing.noStroke(); // no dibujar lineas de contorno
+
+            if (animacion(world.time, 3, 6) < 1)
+                dibujarPacmanCompleto(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 2)
+                dibujarPacmanConArco2(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 3)
+                dibujarPacmanConArco3(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 4)
+                dibujarPacmanConArco(pacmanSize);
+            else if (animacion(world.time, 3, 6) < 5)
+                dibujarPacmanConArco3(pacmanSize);
+            else
+                dibujarPacmanConArco2(pacmanSize);
+
+            processing.stroke(0); // volver a dibujar las lineas de contorno, color negro
+
+        }
+
+        function animacion(time, velocidadSprite, numeroDeSprites) {
+            return (time / (framesPerSecond / (velocidadSprite * numeroDeSprites))) % numeroDeSprites;
+        }
+
+        function dibujarPacmanCompleto(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, 0, radianes(360));
+        }
+
+        function dibujarPacmanConArco(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(45), radianes(315));
+        }
+
+        function dibujarPacmanConArco2(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(15), radianes(345));
+        }
+
+        function dibujarPacmanConArco3(pacmanSize) {
+            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(30), radianes(330));
+        }
+
+        //radianes(angulo) toma como parametro una angulo (45) y da como salida un radian (PI/4)
+        function radianes(angulo) {
+            return angulo * (Math.PI / 180);
+        }
+
+        function dibujarMapa() {
+            forEach(mapa.matrix, (row, i) => {
+                forEach(row, (cell, j) => {
+                    if (cell == mapa.pared) {
+                        processing.fill(10, 30, 220); // color
+                        processing.rect(j * cellSizeWidth, i * cellSizeHeight, cellSizeWidth, cellSizeHeight);
+                    }
+                    if (cell == mapa.camino || cell == mapa.pacman) {
+                        processing.fill(20, 35, 80); // color
+                        processing.rect(j * cellSizeWidth, i * cellSizeHeight, cellSizeWidth, cellSizeHeight);
+                    }
+                })
+            });
+        }
+
+        function inicializarPacman(world) {
+
+            return mapa.matrix.reduce(function (acumulador, row, i) {
+                let j = row.findIndex((cell) => cell == mapa.pacman);
+                if (j != -1) {
+                    return { x: j * 1 * cellSizeWidth + cellSizeWidth / 2, y: i * 1 * cellSizeHeight + cellSizeHeight / 2, currentMovement: world.pacman.currentMovement };
+                } else {
+                    return acumulador;
+                }
+            });
+
+
+            /* forEach(mapa.matrix, (row, i) => {
+                 forEach(row, (cell, j) => {
+                     if (cell == mapa.pacman) {
+                         console.log(i);
+                         console.log(j);
+ 
+                         return { x: i * cellSizeWidth, y: j * cellSizeHeight, currentMovement: world.pacman.currentMovement };
+                     }
+                 })
+             });*/
+        }
+
+        const framesPerSecond = 48;
+        /*
+            mapa = {
+                size:null,
+                matrix:null,
+                pared:null,
+                camino:null
+            }
+        */
+        const mapa = {
+            size: {
+                width: 900, //34.19
+                height: 553.846153846 // () => cellSizeHeight * mapa.matrix.length
+            },
+            matrix: [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 'p', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                [1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+                [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+                [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            pared: 1,
+            camino: 0,
+            pacman: 'p',
+        };
+
+
+        /* DETERMINAR EL TAMAÑO EN PIXELES DE CADA CELDA */
+        const cellSizeWidth = mapa.size.width / mapa.matrix[0].length; // mapa.matrix[0].length = 26
+        const cellSizeHeight = cellSizeWidth;
+
+        // cambia la longitud de los pasos de pacman
+        const pacmanStep = 1;
+
+        // cambia la posicion del pacman
+        // proccessing.up sirve es la direccion
+        // la funcion se llama asi: moverPacman(world.pacman, world.time)
+        // retorna un objeto del tipo pacman
+        function moverPacman(pacman, gameTime) {
+
+            if (pacman.y <= cellSizeHeight + cellSizeWidth / 2 + 3 && pacman.currentMovement == processing.UP) {
+
+                return { x: pacman.x, y: pacman.y, currentMovement: processing.UP };
+            }
+
+            if (pacman.currentMovement == processing.LEFT && pacman.x <= cellSizeWidth + cellSizeWidth / 2 + 1) {
+
+                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
+            }
+
+            if (pacman.currentMovement == processing.DOWN && pacman.y >= mapa.size.height - (cellSizeHeight + cellSizeWidth / 2 + 1)) {
+
+                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
+            }
+
+            if (pacman.currentMovement == processing.RIGHT && pacman.x >= mapa.size.width - (cellSizeWidth + cellSizeWidth / 2))
+                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
+
+
+            // mover el pacman un step
+            if (pacman.currentMovement == processing.UP)
+                return { x: pacman.x, y: pacman.y - pacmanStep, currentMovement: pacman.currentMovement };
+
+            if (pacman.currentMovement == processing.LEFT)
+                return { x: pacman.x - pacmanStep, y: pacman.y, currentMovement: pacman.currentMovement };
+
+            if (pacman.currentMovement == processing.DOWN)
+                //
+                return { x: pacman.x, y: pacman.y + pacmanStep, currentMovement: pacman.currentMovement };
+
+            if (pacman.currentMovement == processing.RIGHT)
+                return { x: pacman.x + pacmanStep, y: pacman.y, currentMovement: pacman.currentMovement };
+        }
+
+        //Proposito: hacer calculos para decidir si debo cambiar el estado del mundo o no
+        //Se cambia el estado del mundo si la siguiente celda, es igual a un muro
+        //Posicion Pacmnan me halla la posicion de pacman en la matrix [x],[y]
+        function pacmanMatrix(world) {
+            let pacman = world.pacman;
+            const listaX = Math.floor(pacman.x / cellSizeWidth);
+            const listaY = Math.floor(pacman.y / cellSizeHeight);
+            return cons(listaX, cons(listaY, []));
+
+            //console.log(pacmanMatrix(world))
+        }
+        //Proposito: identificar la proxima casilla
+        //la funcion identificar va a utilizar a pacmanMarix y a esa funcion le sumamos en [x], una unidad y sacamos el tipo
+        //si es igual a 1 que devuelva un mundo sin movimiento.
+        /*
+        pacman = {
+          x:null,
+          y:null,
+          currentMovement:null // direccion del movimiento
+        }
+        */
+        // identificar: world -> pacman
+
+        function identificar(world) {
+            //Vamos a usar la funcion indice para hallar el valor que hay en un indece dado, el indice dado es identificarX o identificarY
+
+            //let index = function (world, matrix, index) {
+
+            // nos da la coordenada de pacman en la matrix
+            let pacman = world.pacman;
+            let row = Math.floor(pacman.x / cellSizeWidth);
+            let col = Math.floor(pacman.y / cellSizeHeight);
+
+            let identificarX = cons(row + 1, []);
+            let identificarY = cons(col + 1, []);
+
+            //console.log(pacmanMatrix(world))
+            const oldMovement = processing.RIGHT;
+            if (row == indiceParedX(world) && col == indiceParedY(world)) {
+                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement }
+            }
+
+            //Hay un problema al llamar a la funcion moverPacman aqui
+            //Que comoienze la fiesta---------------------------------------------------------------------------------------------------------------
+            else {
+                return moverPacman(world.pacman, world.time)
+            }
+
+
+
+
+
+
+
+
+
+            //Que termine la fiesta---------------------------------------------------------------------------------------------------------------------
+            //return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
+
+            // else if (0 == mapa.camino)
+            //return moverPacman(world);
+
+            //  }(world, mapa.matrix, 0);
+        }
+
+        //Proposito es hallar el tipo de celda que hay en las coordenadas de identficarX,identificarY, para comparar
+        //si es igual igual a pared o si es igual igual a camino.
+
+        function indiceParedX(world) {
+            let pacman = world.pacman;
+            let row = Math.floor(pacman.x / cellSizeWidth);
+            let col = Math.floor(pacman.y / cellSizeHeight);
+            let filaColumna = col
+            //cambia el tres----------------------------------------------------------------
+            const fila2 = rest(mapa.matrix[filaColumna])
+            function buscar(lista, numero) {
+                if (first(lista) == numero) {
+                    return 0;
+                }
+                else {
+                    return buscar(rest(lista), numero) + 1;
+                }
+            }
+            return buscar(fila2, 1)
+            //consolel.log(fila2)
+        }
+        function indiceParedY(world) {
+            //cambia el tres----------------------------------------------------------------
+            let pacman = world.pacman;
+            let row = Math.floor(pacman.x / cellSizeWidth);
+            let col = Math.floor(pacman.y / cellSizeHeight);
+            let filaColumna = col;
+            return filaColumna
+            //consolel.log(fila2)
+        }
+
+        //Halla el valor en un indice de una lista  rest(mapa.matrix[1]) el indice que vamos a encontrar es el que nos da indice
+
+        // ----------------------------------------------------------------------------------------------------------------
+        // FIN NUESTROS CODIGOS
+        // ----------------------------------------------------------------------------------------------------------------
+
+        function forEach(l, f, index = 0) {
+            if (!isEmpty(l)) {
+                f(first(l), index);
+                forEach(rest(l), f, index + 1);
+            }
+        }
+
+        // ----------------------------------------------------------------------------------------------------------------
+    }
+
+    var canvas = document.getElementById("canvas");
+    // ----------------------------------------------------------------------------------------------------------------
+    var canvas = document.getElementById("canvas");
+    // Adjuntamos nuestro sketch al framework de processing
+    var processingInstance = new Processing(canvas, sketchProc);
+</script>

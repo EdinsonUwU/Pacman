@@ -5,338 +5,202 @@
     <script src="js/jquery-3.1.1.min.js"></script>
     <script src="js/processing.js"></script>
     <script src="js/fl-extended.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        #pagina {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            height: 100%;
+            align-items: center;
+        }
+
+        #play-button {
+
+            cursor: pointer;
+            width: 280px;
+            -webkit-animation: playbutton 3s infinite;
+            margin-bottom: 50px;
+        }
+
+        #int-button {
+
+            cursor: pointer;
+            width: 280px;
+            -webkit-animation: playbutton 3s infinite;
+        }
+
+        @-webkit-keyframes playbutton {
+
+            0%,
+            100% {
+                -webkit-filter: brightness(100%);
+                -webkit-transition: all 1.5s ease;
+                -moz-transition: all 1.5s ease;
+                -o-transition: all 1.5s ease;
+                -ms-transition: all 1.5s ease;
+                transition: all 1.5s ease;
+            }
+
+            50% {
+                -webkit-filter: brightness(60%);
+                -webkit-transition: all 1.5s ease;
+                -moz-transition: all 1.5s ease;
+                -o-transition: all 1.5s ease;
+                -ms-transition: all 1.5s ease;
+                transition: all 1.5s ease;
+            }
+        }
+
+        #canvas {
+            margin-top: 0px;
+            margin-left: 0px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #000;
+            border-radius: 0px;
+            position: relative;
+        }
+
+        #canvas:focus {
+            outline: none;
+        }
+
+        #canvas-container {
+            display: none;
+            position: relative;
+            width: 900px;
+        }
+
+        #game-status {
+            background: #000;
+            width: 259px;
+            height: 74px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            left: 634px;
+            bottom: 486px;
+            border-bottom-left-radius: 15px;
+            font-family: karla;
+            font-weight: bold;
+            font-size: 15px;
+            color: #fff;
+        }
+
+        #go-menu {
+            height: 25px;
+            width: 25px;
+        }
+
+        #vidas {
+            margin-right: 35px;
+            margin-left: 5px;
+        }
+
+        #puntaje {
+            margin-right: 5px;
+            margin-left: 5px;
+        }
+
+        body {
+            background: #000;
+            background-image: url("images/bg10.png");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        @font-face {
+            font-family: 'vermin';
+            src: url('media/VerminVibesV-Zlg3.ttf');
+        }
+
+        @font-face {
+            font-family: 'atari';
+            src: url('media/AtariClassic-gry3.ttf');
+        }
+
+        #instrucciones {
+            display: none;
+            width: 888px;
+            height: 555px !important;
+            background-color: #000;
+            color: #E2C700;
+            text-align: center;
+
+            align-items: center;
+            justify-content: center;
+            font-family: vermin;
+            font-size: 17px;
+            box-shadow: 0px 0px 40px 40px #000;
+            border-radius: 50px;
+        }
+    </style>
 </head>
 
-<div id="pagina">
-    <canvas id="canvas"></canvas>
+<div id="pagina2">
+
 </div>
 
-<style>
-    #pagina {
-        display: flex;
-        width: 100%;
-        justify-content: center;
-        height: 100%;
-        align-items: center;
-    }
+<div id="pagina">
+    <div style="width: 280px;">
+        <img src="images/play.svg" id="play-button">
+        <img src="images/instru.svg" id="int-button">
+    </div>
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+        <div id="game-status">
+            Vidas: <span id="vidas">3</span>
+            Puntaje: <span id="puntaje">0</span>
 
-    #canvas {
-        border-width: 5px;
-        border-style: solid;
-        border-color: black;
-        border-radius: 0px;
-    }
+        </div>
+    </div>
+    <div id="instrucciones">
+        <div style="margin: 80px; margin-top: 40px;">
+            <span style="color: #E26300;font-size: 40px;">INSTRUCCIONES</span>
+            <br> <br><br>
+            1. Al iniciar el juego, el pacman debe comer todas las galletas que se encuentran en el mapa. <br>
+            Si se come una galleta grande, el pacman obtiene la habilidad de matar a los fantasmas durante cierto
+            tiempo.
+            <br><br>
+            2. En intervalos de tiempo aparecerá una fruta que aumenta el puntaje; una vez el pacman <br>
+            la come, la fruta ya no vuelve a aparecer en el juego. <br><br>
+            3. Durante el juego aparecerán cuatro fantasmas, que se encargarán de impedir que el pacman se coma
+            todas
+            las
+            galletas. <br><br>
+            4. Si el pacman se come todas las galletas, habrá ganado el juego <br><br>
+            5. Si las vidas del pacman llegan a cero, el pacman muere y vuelve al menú. <br><br>
+        </div>
+    </div>
+</div>
 
-    body {
-        background: rgb(19, 188, 240);
-    }
-</style>
+<script>//<audio src="media/pacmanElectroRemix.ogg" autoplay loop></audio></script>
 
+<img src="images/coin.svg" id="coin" style="display: none;">
+
+<script src="mapa.js"></script>
+<script src="pacman.js"></script>
+<script src="fantasmas.js"></script>
+<script src="galletas.js"></script>
+
+<script src="game.js"></script>
 
 <script>
-    let { append, cons, first, isEmpty, isList, length, rest, map } = require('fl-extended');
-
-    function sketchProc(processing) {
-        // esto se llama antes de iniciar el juego
-        processing.setup = function () {
-            processing.frameRate(framesPerSecond);
-            processing.size(mapa.size.width, mapa.size.height);
-            processing.background(250, 250, 250);
-            processing.state = { time: 1, pacman: { x: 0, y: 0, currentMovement: processing.LEFT } };
-            // enfocar el canvas al inicio 
-            document.getElementById("canvas").focus();
-        }
-
-        // Se ejecuta 48 veces por segundo. 
-        processing.draw = function () {
-            processing.state = processing.onTic(processing.state);
-            processing.drawGame(processing.state);
-        }
-
-        // dibuja algo en el canvas. Aqui se pone todo lo que quieras pintar
-        processing.drawGame = function (world) {
-            // hace que no se muestre todos los lugares por donde ha estado pacman
-            processing.background();
-            dibujarMapa(world);
-            dibujarPacmanAnimado(world);
+    $("#play-button").click(() => {
+        $("#play-button").parent().css("display", "none");
+        $("#canvas-container").fadeIn("slow");
+        document.getElementById("canvas").focus();
+        play = true;
+    });
 
 
-        }
+    $("#int-button").click(() => {
+        $("#int-button").parent().css("display", "none");
+        $("#instrucciones").fadeIn("slow");
+    });
 
-        // actualiza el mundo en cada tic del reloj. Retorna el nuevo estado del mundo
-        processing.onTic = function (world) {
-            if (world.time == 1)
-                return Object.assign(world, { time: world.time + 1 }, { pacman: inicializarPacman(world) });
-
-            let pacman = moverPacman(world.pacman, world.time);
-            //let pacman = world.pacman;
-
-            return Object.assign(world, { time: world.time + 1 }, { pacman: pacman });
-        }
-
-        // actualiza el mundo cada vez que se oprime una tecla. Retorna el nuevo estado del mundo
-        processing.onKeyEvent = function (world, keyCode) {
-            switch (keyCode) {
-                case processing.UP:
-                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.UP } });
-                    //x: world.pacman.x, y: world.pacman.y -5, 
-                    break;
-                case processing.DOWN:
-                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.DOWN } });
-                    //x: world.pacman.x, y: world.pacman.y +5 , 
-                    break;
-                case processing.LEFT:
-                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.LEFT } });
-                    //x: world.pacman.x -5, y: world.pacman.y,
-                    break;
-                case processing.RIGHT:
-                    return Object.assign(world, { pacman: { x: world.pacman.x, y: world.pacman.y, currentMovement: processing.RIGHT } });
-                    //x: world.pacman.x +5, y: world.pacman.y, 
-                    break;
-                default:
-                    console.log(keyCode);
-                    return Object.assign(world, {});
-            }
-        }
-
-        // Esta función se ejecuta cada vez que presionamos una tecla.
-        processing.keyPressed = function () {
-            processing.state = processing.onKeyEvent(processing.state, processing.keyCode);
-        }
-
-        // ----------------------------------------------------------------------------------------------------------------
-        // NUESTROS CODIGOS
-        // ----------------------------------------------------------------------------------------------------------------
-        function dibujarPacmanAnimado(world) {
-
-            // dibuja el pacman en el mapa, se incluye la rotacion de acuerdo a la direccion de movimiento
-            let pacman = world.pacman;
-            // queremos que quepa en el camino, asi que elejimos la menor anchura para que no sobrepase el camino = 0;
-            const pacmanSize = Math.min(cellSizeWidth, cellSizeHeight);
-
-            processing.fill(250, 200, 0); // color
-
-            processing.translate(pacman.x, pacman.y); // mueve el centro de rotacion
-
-
-            if (pacman.currentMovement == processing.UP)
-                processing.rotate(radianes(270));
-
-            if (pacman.currentMovement == processing.DOWN)
-                processing.rotate(radianes(90));
-
-            if (pacman.currentMovement == processing.LEFT)
-                processing.rotate(radianes(180));
-
-            if (pacman.currentMovement == processing.RIGHT)
-                processing.rotate(radianes(0));
-
-
-            processing.noStroke(); // no dibujar lineas de contorno
-
-            if (animacion(world.time, 3, 6) < 1)
-                dibujarPacmanCompleto(pacmanSize);
-            else if (animacion(world.time, 3, 6) < 2)
-                dibujarPacmanConArco2(pacmanSize);
-            else if (animacion(world.time, 3, 6) < 3)
-                dibujarPacmanConArco3(pacmanSize);
-            else if (animacion(world.time, 3, 6) < 4)
-                dibujarPacmanConArco(pacmanSize);
-            else if (animacion(world.time, 3, 6) < 5)
-                dibujarPacmanConArco3(pacmanSize);
-            else
-                dibujarPacmanConArco2(pacmanSize);
-
-            processing.stroke(0); // volver a dibujar las lineas de contorno, color negro
-
-        }
-
-        function animacion(time, velocidadSprite, numeroDeSprites) {
-            return (time / (framesPerSecond / (velocidadSprite * numeroDeSprites))) % numeroDeSprites;
-        }
-
-        function dibujarPacmanCompleto(pacmanSize) {
-            processing.arc(0, 0, pacmanSize, pacmanSize, 0, radianes(360));
-        }
-
-        function dibujarPacmanConArco(pacmanSize) {
-            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(45), radianes(315));
-        }
-
-        function dibujarPacmanConArco2(pacmanSize) {
-            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(15), radianes(345));
-        }
-
-        function dibujarPacmanConArco3(pacmanSize) {
-            processing.arc(0, 0, pacmanSize, pacmanSize, radianes(30), radianes(330));
-        }
-
-        //radianes(angulo) toma como parametro una angulo (45) y da como salida un radian (PI/4)
-        function radianes(angulo) {
-            return angulo * (Math.PI / 180);
-        }
-
-        function dibujarMapa() {
-            forEach(mapa.matrix, (row, i) => {
-                forEach(row, (cell, j) => {
-                    if (cell == mapa.pared) {
-                        processing.fill(10, 30, 220); // color
-                        processing.rect(j * cellSizeWidth, i * cellSizeHeight, cellSizeWidth, cellSizeHeight);
-                    }
-                    if (cell == mapa.camino || cell == mapa.pacman) {
-                        processing.fill(20, 35, 80); // color
-                        processing.rect(j * cellSizeWidth, i * cellSizeHeight, cellSizeWidth, cellSizeHeight);
-                    }
-                })
-            });
-        }
-
-        function inicializarPacman(world) {
-
-            return mapa.matrix.reduce(function (acumulador, row, i) {
-                let j = row.findIndex((cell) => cell == mapa.pacman);
-                if (j != -1) {
-                    return { x: j * cellSizeWidth, y: i * cellSizeHeight, currentMovement: world.pacman.currentMovement };
-                } else {
-                    return acumulador;
-                }
-            });
-
-            /* forEach(mapa.matrix, (row, i) => {
-                 forEach(row, (cell, j) => {
-                     if (cell == mapa.pacman) {
-                         console.log(i);
-                         console.log(j);
- 
-                         return { x: i * cellSizeWidth, y: j * cellSizeHeight, currentMovement: world.pacman.currentMovement };
-                     }
-                 })
-             });*/
-        }
-
-        const framesPerSecond = 48;
-        /*
-            mapa = {
-                size:null,
-                matrix:null,
-                pared:null,
-                camino:null
-            }
-        */
-        const mapa = {
-            size: {
-                width: 889,
-                height: 550
-            },
-            matrix: [
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-                [1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1],
-                [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
-                [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1],
-                [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-                [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 'p', 1, 1, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-            ],
-            pared: 1,
-            camino: 0,
-            pacman: 'p',
-        };
-
-        function cellSize(canvasSize, matrixSize) {
-            return canvasSize / matrixSize;
-        }
-        // mapa.matrix.length = 15
-        //mapa.matrix[0].length=27
-        const cellSizeWidth = cellSize(mapa.size.width, mapa.matrix[0].length);
-        const cellSizeHeight = cellSize(mapa.size.height, mapa.matrix.length);
-        // mapa.matrix.length = 15
-        // cambia la longitud de los pasos de pacman
-        const pacmanStep = 2;
-
-        // cambia la posicion del pacman
-        // proccessing.up sirve es la direccion
-        // la funcion se llama asi: moverPacman(world.pacman, world.time)
-        /*
-        pacman = {
-          x:null,
-          y:null,
-          currentMovement:null,
-          nextMove:null
-        }
-        */
-        // retorna un objeto del tipo pacman
-        function moverPacman(pacman, gameTime) {
-
-            // si pacman llego a la frontera, que se detenga
-            /*
-            if (pacman.x > mapa.size.width) {
- 
-            }
-            if (pacman.x < 0) {
- 
-            }
-            if (pacman.y > mapa.size.height) {
- 
-            }
-            */
-            if (pacman.y <= cellSizeHeight + cellSizeWidth / 2 + 3 && pacman.currentMovement == processing.UP) {
-
-                return { x: pacman.x, y: pacman.y, currentMovement: processing.LEFT };
-            }
-            if (pacman.currentMovement == processing.LEFT && pacman.x <= cellSizeWidth + cellSizeWidth / 2 + 1) {
-
-                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
-            }
-            if (pacman.currentMovement == processing.DOWN && pacman.y >= mapa.size.height - (cellSizeHeight + cellSizeWidth / 2 + 1)) {
-
-                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
-            }
-
-            if (pacman.currentMovement == processing.RIGHT && pacman.x >= mapa.size.width - (cellSizeWidth + cellSizeWidth / 2))
-                return { x: pacman.x, y: pacman.y, currentMovement: pacman.currentMovement };
-
-
-            // mover el pacman un step
-            if (pacman.currentMovement == processing.UP)
-                return { x: pacman.x, y: pacman.y - pacmanStep, currentMovement: pacman.currentMovement };
-
-            if (pacman.currentMovement == processing.LEFT)
-                return { x: pacman.x - pacmanStep, y: pacman.y, currentMovement: pacman.currentMovement };
-
-            if (pacman.currentMovement == processing.DOWN)
-                //
-                return { x: pacman.x, y: pacman.y + pacmanStep, currentMovement: pacman.currentMovement };
-
-            if (pacman.currentMovement == processing.RIGHT)
-                return { x: pacman.x + pacmanStep, y: pacman.y, currentMovement: pacman.currentMovement };
-        }
-
-
-        // ----------------------------------------------------------------------------------------------------------------
-        // FIN NUESTROS CODIGOS
-        // ----------------------------------------------------------------------------------------------------------------
-
-        function forEach(l, f, index = 0) {
-            if (!isEmpty(l)) {
-                f(first(l), index);
-                forEach(rest(l), f, index + 1);
-            }
-        }
-
-        // ----------------------------------------------------------------------------------------------------------------
-    }
-
-    var canvas = document.getElementById("canvas");
-    // ----------------------------------------------------------------------------------------------------------------
-    var canvas = document.getElementById("canvas");
-    // Adjuntamos nuestro sketch al framework de processing
-    var processingInstance = new Processing(canvas, sketchProc);
 </script>
